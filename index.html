@@ -329,6 +329,7 @@ td{padding:9px 12px;vertical-align:middle}
           <th>#</th>
           <th>วันที่</th>
           <th>ชื่อลูกค้า</th>
+          <th>เซลล์</th>
           <th>พื้นที่</th>
           <th>โอกาส</th>
           <th>ดำเนินการ</th>
@@ -565,17 +566,19 @@ function renderTable(){
     tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบข้อมูล</p></div></td></tr>`;
     document.getElementById('tbl-count').textContent='';return;
   }
-  tbody.innerHTML=filtered.map((d,i)=>`
-    <tr onclick="openDetail(${allData.indexOf(d)})">
+  tbody.innerHTML=filtered.map((d,i)=>{const idx=allData.indexOf(d);return`
+    <tr onclick="openDetail(${idx})">
       <td style="color:#888;font-size:12px">${i+1}</td>
       <td style="white-space:nowrap;font-size:12px">${fmtDate(d.date)}</td>
       <td style="font-weight:600;color:#1F4E79">${esc(d.name)}</td>
+      <td style="font-size:12px;color:#2E75B6;font-weight:600">${esc(d.sales||'-')}</td>
       <td style="font-size:12px;color:#555">${esc(d.area||'-')}</td>
       <td><span class="opp-badge ${OPP_CLASS[d.opp]||''}">${d.opp||'-'}</span></td>
-      <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn-sm btn-edit" onclick="openEdit(${allData.indexOf(d)})">แก้ไข</button>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn-sm btn-edit" onclick="openEdit(${idx})">แก้ไข</button>
+        <button class="btn-sm btn-del" onclick="confirmDelete(${idx})">ลบ</button>
       </td>
-    </tr>`).join('');
+    </tr>`;}).join('');
   document.getElementById('tbl-count').textContent=`แสดง ${filtered.length} จาก ${allData.length} รายการ`;
 }
 
@@ -687,6 +690,36 @@ async function saveEdit(idx){
 
 function closeModal(){document.getElementById('modal').classList.remove('show');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── DELETE ────────────────────────────────────────────────────
+function confirmDelete(idx){
+  const d=allData[idx];
+  document.getElementById('modal-title').textContent='ยืนยันการลบ';
+  document.getElementById('modal-body').innerHTML=`
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+      <div style="font-size:15px;font-weight:700;color:#1F4E79;margin-bottom:6px">${esc(d.name)}</div>
+      <div style="font-size:13px;color:#888">ต้องการลบรายการนี้ออกจากระบบ?<br>ข้อมูลจะถูกลบใน Google Sheets ด้วย</div>
+    </div>`;
+  document.getElementById('modal-footer').innerHTML=`
+    <button class="btn-sm btn-cancel" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn-sm btn-del" style="padding:8px 18px" onclick="doDelete(${idx})">ยืนยันลบ</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+async function doDelete(idx){
+  const d=allData[idx];
+  try{
+    if(SCRIPT_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+      const p=new URLSearchParams({mode:'delete',row:d.row});
+      await fetch(SCRIPT_URL,{method:'POST',body:p});
+    }
+    allData.splice(idx,1);
+    renderTable();updateStats();
+    closeModal();
+    showToast('ลบข้อมูลเรียบร้อยแล้ว 🗑️');
+  }catch(err){showToast('เกิดข้อผิดพลาด กรุณาลองใหม่');}
+}
 </script>
 </body>
 </html>
