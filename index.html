@@ -146,6 +146,21 @@ td{padding:9px 12px;vertical-align:middle}
 .empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:.4}
 .empty-state p{font-size:14px}
 
+/* ── LOCATION ── */
+.loc-box{background:#f0f7ff;border:1.5px solid #c8d6e5;border-radius:10px;padding:12px 14px;margin-top:10px}
+.loc-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.loc-coords{font-size:12px;color:#1F4E79;font-weight:600;flex:1;min-width:0}
+.loc-dist{font-size:12px;color:#388600;font-weight:700;white-space:nowrap}
+.btn-loc{padding:8px 14px;background:#1F4E79;color:#fff;border:none;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.btn-loc:hover{background:#2E75B6}
+.btn-loc svg{width:14px;height:14px}
+.btn-loc.locating{background:#888;cursor:not-allowed}
+.loc-map-btn{padding:6px 12px;background:#e8f4e8;color:#388600;border:1px solid #b5d8a0;border-radius:7px;font-size:12px;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+.loc-map-btn:hover{background:#d0ecd0}
+.loc-status{font-size:11px;color:#888;margin-top:4px}
+/* detail map link */
+.map-link{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:#e8f4e8;color:#388600;border-radius:7px;font-size:12px;text-decoration:none;margin-top:4px}
+.map-link:hover{background:#d0ecd0}
 @media(max-width:400px){.dash-top{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}}
 </style>
 </head>
@@ -202,6 +217,21 @@ td{padding:9px 12px;vertical-align:middle}
             <label>พื้นที่ (ต. อ. จ.)</label>
             <input type="text" id="f-area" placeholder="ต. อ. จ.">
           </div>
+        </div>
+        <!-- LOCATION -->
+        <div class="loc-box">
+          <div style="font-size:12px;font-weight:700;color:#1F4E79;margin-bottom:8px">📍 ตำแหน่งหน้างาน</div>
+          <div class="loc-row">
+            <button type="button" class="btn-loc" id="loc-btn" onclick="getLocation()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              ปักหมุดตำแหน่งปัจจุบัน
+            </button>
+            <span class="loc-dist" id="loc-dist"></span>
+          </div>
+          <div class="loc-coords" id="loc-coords" style="margin-top:6px"></div>
+          <div class="loc-status" id="loc-status">กดปุ่มเพื่อจับพิกัด GPS ณ หน้างาน</div>
+          <input type="hidden" id="f-lat">
+          <input type="hidden" id="f-lng">
         </div>
       </div>
     </div>
@@ -330,6 +360,49 @@ td{padding:9px 12px;vertical-align:middle}
 // ── CONFIG ────────────────────────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwN5RATdbjks0qb8x4OjTpnS1LuBc0ku2Z3YUonpYyLeXtVu_QjuBl53aiw762jt36PKQ/exec";
 
+// ── BASE = ท่าทรายรุ่งอรุณ ราษีไศล ──────────────────────────
+const BASE_LAT = 15.3583;
+const BASE_LNG = 104.1617;
+
+function getLocation(){
+  const btn=document.getElementById('loc-btn');
+  const status=document.getElementById('loc-status');
+  if(!navigator.geolocation){status.textContent='มือถือนี้ไม่รองรับ GPS';return;}
+  btn.classList.add('locating');
+  btn.textContent='กำลังจับพิกัด...';
+  status.textContent='รอสักครู่...';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude;
+      const lng=pos.coords.longitude;
+      document.getElementById('f-lat').value=lat;
+      document.getElementById('f-lng').value=lng;
+      const dist=calcDist(BASE_LAT,BASE_LNG,lat,lng);
+      document.getElementById('loc-coords').textContent=`พิกัด: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById('loc-dist').textContent=`📏 ${dist} กม. จากท่าทราย`;
+      document.getElementById('loc-status').innerHTML=
+        `✅ จับพิกัดสำเร็จ &nbsp;
+        <a href="https://www.google.com/maps/dir/${BASE_LAT},${BASE_LNG}/${lat},${lng}" target="_blank" class="loc-map-btn">🗺️ ดูเส้นทางใน Google Maps</a>`;
+      btn.classList.remove('locating');
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> ปักหมุดใหม่';
+    },
+    err=>{
+      status.textContent='ไม่สามารถจับพิกัดได้ — กรุณาอนุญาต GPS';
+      btn.classList.remove('locating');
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> ลองใหม่';
+    },
+    {enableHighAccuracy:true,timeout:15000}
+  );
+}
+
+function calcDist(lat1,lng1,lat2,lng2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
+}
+
 // ── DATA STORE ───────────────────────────────────────────────
 let allData = [];   // [{row, date, name, contact, area, ctype, wtype, opp, amount, sales, saved}]
 let currentRow = null;
@@ -355,24 +428,27 @@ document.getElementById('f-date').value = new Date().toISOString().split('T')[0]
 
 // ── FORM CHOICE HELPERS ──────────────────────────────────────
 function pickR(el,name){
-  if(event.target.tagName==='INPUT'&&event.target.type==='text') return;
+  if(event.target.tagName==='INPUT'&&(event.target.type==='text'||event.target.type==='number')) return;
   document.querySelectorAll(`[name="${name}"]`).forEach(r=>r.closest('.ci').classList.remove('sel'));
   el.classList.add('sel');
   el.querySelector('input[type=radio]').checked=true;
-  el.closest('.choices').querySelectorAll('.sub-inp').forEach(s=>{if(!el.contains(s))s.classList.remove('show')});
+  el.closest('.choices').querySelectorAll('.sub-inp').forEach(s=>{if(!el.contains(s)){s.classList.remove('show');}});
+  const sub=el.querySelector('.sub-inp');
+  if(sub){sub.classList.add('show');setTimeout(()=>sub.focus(),50);}
 }
 function togCB(el){
-  if(event.target.tagName==='INPUT'&&event.target.type==='text') return;
+  if(event.target.tagName==='INPUT'&&(event.target.type==='text'||event.target.type==='number')) return;
   const cb=el.querySelector('input[type=checkbox]');
   cb.checked=!cb.checked;
   el.classList.toggle('sel',cb.checked);
+  const sub=el.querySelector('.sub-inp');
+  if(sub){
+    sub.classList.toggle('show',cb.checked);
+    if(cb.checked) setTimeout(()=>sub.focus(),50);
+  }
 }
 function togSub(id,el){
-  const inp=document.getElementById(id);
-  const ctrl=el.querySelector('input');
-  const on=ctrl.type==='radio'?true:ctrl.checked;
-  inp.classList.toggle('show',on);
-  if(on) setTimeout(()=>inp.focus(),50);
+  // legacy — kept for compatibility, logic now inside pickR/togCB
 }
 function showAmt(on){
   document.getElementById('f-amount').classList.toggle('show',on);
@@ -395,7 +471,9 @@ function collectForm(){
     area:document.getElementById('f-area').value.trim(),
     ctype,wtype:wtypes.join(', '),opp,
     amount:opp==='4'?(document.getElementById('f-amount').value||''):'',
-    sales:document.getElementById('f-sales').value.trim()
+    sales:document.getElementById('f-sales').value.trim(),
+    lat:document.getElementById('f-lat').value,
+    lng:document.getElementById('f-lng').value
   };
 }
 
@@ -528,7 +606,13 @@ function openDetail(idx){
     <div class="detail-row"><div class="detail-key">งานที่ดำเนินการ</div><div class="detail-val">${esc(d.wtype||'-')}</div></div>
     <div class="detail-row"><div class="detail-key">โอกาสการขาย</div><div class="detail-val"><span class="opp-badge ${OPP_CLASS[d.opp]||''}">${oppLabel}</span></div></div>
     ${d.opp==='4'?`<div class="detail-row"><div class="detail-key">ยอดบิลแรก</div><div class="detail-val" style="font-weight:700;color:#388600">${fmtAmt(d.amount)}</div></div>`:''}
-    <div class="detail-row"><div class="detail-key">บันทึกเมื่อ</div><div class="detail-val" style="color:#888;font-size:12px">${esc(d.saved||'-')}</div></div>`;
+    <div class="detail-row"><div class="detail-key">บันทึกเมื่อ</div><div class="detail-val" style="color:#888;font-size:12px">${esc(d.saved||'-')}</div></div>
+    ${d.lat&&d.lng?`<div class="detail-row"><div class="detail-key">ตำแหน่ง GPS</div><div class="detail-val">
+      <div style="font-size:12px;color:#555">${parseFloat(d.lat).toFixed(5)}, ${parseFloat(d.lng).toFixed(5)}</div>
+      <div style="font-size:12px;color:#388600;font-weight:700">📏 ${calcDist(BASE_LAT,BASE_LNG,parseFloat(d.lat),parseFloat(d.lng))} กม. จากท่าทราย</div>
+      <a class="map-link" href="https://www.google.com/maps?q=${d.lat},${d.lng}" target="_blank">🗺️ เปิด Google Maps</a>
+    </div></div>`:''}
+    `;
   document.getElementById('modal-footer').innerHTML=`
     <button class="btn-sm btn-cancel" onclick="closeModal()">ปิด</button>
     <button class="btn-sm btn-edit" onclick="openEdit(${idx})">แก้ไขข้อมูล</button>`;
