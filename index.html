@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบลูกค้าใหม่ — ท่าทรายรุ่งอรุณ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun','TH SarabunPSK',Arial,sans-serif;font-size:15px;background:#f0f4f8;color:#1a1a2e;min-height:100vh}
+
+/* ── NAV BAR ── */
+.navbar{background:#1F4E79;display:flex;align-items:center;padding:0 16px;height:56px;gap:0;position:sticky;top:0;z-index:100}
+.nav-brand{color:#fff;font-size:16px;font-weight:700;flex:1;display:flex;align-items:center;gap:10px}
+.nav-brand svg{width:22px;height:22px;opacity:.9}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:8px 16px;border-radius:8px;color:rgba(255,255,255,.7);font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;transition:.15s;white-space:nowrap}
+.nav-tab:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-tab.active{background:#fff;color:#1F4E79}
+.nav-tab svg{width:15px;height:15px;vertical-align:-2px;margin-right:4px}
+
+/* ── PAGE CONTAINER ── */
+.page{display:none;padding:20px 16px 40px;max-width:680px;margin:0 auto}
+.page.active{display:block}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:14px}
+.card-header{background:#2E75B6;color:#fff;padding:10px 18px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.card-header svg{width:16px;height:16px;opacity:.85}
+.card-body{padding:18px}
+
+/* ── FORM FIELDS ── */
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:700;color:#1F4E79;margin-bottom:5px}
+.field label .req{color:#E24B4A;margin-left:2px}
+.field input[type=text],.field input[type=tel],.field input[type=date],.field select,.field textarea{
+  width:100%;padding:10px 13px;border:1.5px solid #c8d6e5;border-radius:9px;
+  font-size:14px;font-family:inherit;color:#1a1a2e;background:#f8fafd;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#2E75B6;box-shadow:0 0 0 3px rgba(46,117,182,.15);background:#fff}
+.field textarea{height:60px;resize:none;line-height:1.5}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%231F4E79' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:34px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── CHOICE ITEMS ── */
+.choices{display:flex;flex-direction:column;gap:7px}
+.ci{display:flex;align-items:flex-start;gap:9px;padding:9px 13px;border:1.5px solid #dce7f0;border-radius:9px;cursor:pointer;background:#f8fafd;font-size:13px;transition:.15s;line-height:1.5}
+.ci:hover{border-color:#2E75B6;background:#edf3fa}
+.ci.sel{border-color:#1F4E79;background:#e6eff7}
+.ci input{width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:#1F4E79;cursor:pointer}
+.ci-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:#1F4E79;color:#fff;border-radius:50%;font-size:10px;font-weight:700;margin-right:5px;flex-shrink:0;vertical-align:middle}
+.sub-inp{width:100%;margin-top:7px;padding:7px 11px;border:1.5px solid #c8d6e5;border-radius:7px;font-size:13px;font-family:inherit;display:none;background:#fff;outline:none}
+.sub-inp.show{display:block}
+.amt-row{display:flex;align-items:center;gap:7px;margin-top:7px}
+.amt-row input{flex:1;padding:7px 11px;border:1.5px solid #c8d6e5;border-radius:7px;font-size:13px;font-family:inherit;display:none;background:#fff;outline:none}
+.amt-row input.show{display:block}
+.amt-row span{font-size:13px;color:#555;display:none}
+.amt-row span.show{display:block}
+
+/* ── BUTTONS ── */
+.btn-primary{width:100%;padding:13px;background:#1F4E79;color:#fff;font-size:16px;font-weight:700;font-family:inherit;border:none;border-radius:11px;cursor:pointer;transition:.2s;margin-top:6px}
+.btn-primary:hover{background:#2E75B6}
+.btn-primary:disabled{background:#8faabf;cursor:not-allowed}
+.btn-sm{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:.15s}
+.btn-edit{background:#2E75B6;color:#fff}
+.btn-edit:hover{background:#1F4E79}
+.btn-del{background:#fce4d6;color:#a32d2d}
+.btn-del:hover{background:#f0a090;color:#fff}
+.btn-cancel{background:#f0f4f8;color:#555;border:1px solid #ccc}
+.btn-save{background:#388600;color:#fff}
+.btn-save:hover{background:#215400}
+
+/* ── SUCCESS ── */
+.success-box{display:none;background:#e2efda;border:1.5px solid #70ad47;border-radius:12px;padding:24px;text-align:center;margin-top:12px}
+.success-box.show{display:block}
+.success-box h3{color:#375623;font-size:18px;margin:8px 0 4px}
+.success-box p{color:#4e7033;font-size:13px}
+.add-more{margin-top:14px;padding:9px 22px;background:#1F4E79;color:#fff;border:none;border-radius:9px;font-size:14px;font-family:inherit;cursor:pointer}
+
+/* ── DASHBOARD ── */
+.dash-top{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:#fff;border-radius:12px;padding:14px 12px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.stat-num{font-size:24px;font-weight:700;color:#1F4E79;line-height:1}
+.stat-lbl{font-size:11px;color:#777;margin-top:4px}
+.stat-card.s1 .stat-num{color:#1F4E79}
+.stat-card.s2 .stat-num{color:#388600}
+.stat-card.s3 .stat-num{color:#2E75B6}
+.stat-card.s4 .stat-num{color:#E24B4A}
+
+.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filter-row input,.filter-row select{padding:8px 12px;border:1.5px solid #c8d6e5;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;outline:none;flex:1;min-width:120px}
+.filter-row select{max-width:160px;flex:none}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #dce7f0}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
+thead tr{background:#1F4E79}
+thead th{color:#fff;padding:10px 12px;text-align:left;font-size:12px;white-space:nowrap}
+tbody tr{border-bottom:1px solid #edf2f7;transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#edf3fa}
+tbody tr:nth-child(even){background:#f8fafd}
+tbody tr:nth-child(even):hover{background:#e6eff7}
+td{padding:9px 12px;vertical-align:middle}
+.opp-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.opp1{background:#fce4d6;color:#843c00}
+.opp2{background:#fff2cc;color:#7d5a00}
+.opp3{background:#deeaf1;color:#1F4E79}
+.opp4{background:#e2efda;color:#375623}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal-head{background:#1F4E79;color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0}
+.modal-head h3{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;opacity:.8}
+.modal-close:hover{opacity:1}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid #edf2f7;display:flex;gap:8px;justify-content:flex-end}
+
+/* detail view */
+.detail-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4f8;font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-key{color:#1F4E79;font-weight:700;min-width:120px;flex-shrink:0;font-size:12px}
+.detail-val{color:#1a1a2e;flex:1}
+
+/* edit form inside modal */
+.modal-field{margin-bottom:14px}
+.modal-field:last-child{margin-bottom:0}
+.modal-field label{display:block;font-size:12px;font-weight:700;color:#1F4E79;margin-bottom:5px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:9px 12px;border:1.5px solid #c8d6e5;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a2e;background:#f8fafd;outline:none;-webkit-appearance:none}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{border-color:#2E75B6;box-shadow:0 0 0 3px rgba(46,117,182,.12)}
+.modal-field textarea{height:56px;resize:none}
+.modal-field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%231F4E79' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 22px;border-radius:20px;font-size:14px;z-index:999;display:none;white-space:nowrap}
+.toast.show{display:block}
+
+.err-msg{color:#c0392b;font-size:11px;margin-top:3px;display:none}
+.err-msg.show{display:block}
+.field-err input,.field-err select{border-color:#E24B4A!important}
+
+.empty-state{text-align:center;padding:40px 20px;color:#aaa}
+.empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:14px}
+
+@media(max-width:400px){.dash-top{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<div class="navbar">
+  <div class="nav-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    ท่าทรายรุ่งอรุณ
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('form')" id="tab-form">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>คีย์ใหม่
+    </button>
+    <button class="nav-tab" onclick="showPage('dash')" id="tab-dash">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>รายชื่อ
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE 1 — FORM ════════════════════ -->
+<div class="page active" id="page-form">
+
+  <form id="mainForm" novalidate>
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        ข้อมูลทั่วไป
+      </div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field" id="fw-date">
+            <label>วันที่ <span class="req">*</span></label>
+            <input type="date" id="f-date">
+            <div class="err-msg" id="e-date">กรุณาเลือกวันที่</div>
+          </div>
+          <div class="field">
+            <label>ชื่อเซลล์ผู้บันทึก</label>
+            <input type="text" id="f-sales" placeholder="ชื่อเซลล์">
+          </div>
+        </div>
+        <div class="field" id="fw-name">
+          <label>ชื่อลูกค้าใหม่ <span class="req">*</span></label>
+          <input type="text" id="f-name" placeholder="ชื่อบุคคล / ร้านค้า / บริษัท">
+          <div class="err-msg" id="e-name">กรุณากรอกชื่อลูกค้า</div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>เบอร์ติดต่อ / ID Line</label>
+            <input type="tel" id="f-contact" placeholder="08X-XXX-XXXX">
+          </div>
+          <div class="field">
+            <label>พื้นที่ (ต. อ. จ.)</label>
+            <input type="text" id="f-area" placeholder="ต. อ. จ.">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        ประเภทลูกค้า
+      </div>
+      <div class="card-body">
+        <div class="choices" id="ctype-grp">
+          <label class="ci" onclick="pickR(this,'ctype')"><input type="radio" name="ctype" value="1.ผู้รับเหมา"><span><span class="ci-num">1</span>ผู้รับเหมา</span></label>
+          <label class="ci" onclick="pickR(this,'ctype')"><input type="radio" name="ctype" value="2.หน่วยงานราชการ"><span><span class="ci-num">2</span>หน่วยงานราชการ</span></label>
+          <label class="ci" onclick="pickR(this,'ctype')"><input type="radio" name="ctype" value="3.ร้านค้าวัสดุ"><span><span class="ci-num">3</span>ร้านค้าวัสดุ</span></label>
+          <label class="ci" onclick="pickR(this,'ctype');togSub('sub-ctype',this)"><input type="radio" name="ctype" value="อื่นๆ"><span><span class="ci-num">4</span>อื่นๆ ระบุ<input class="sub-inp" id="sub-ctype" type="text" placeholder="ระบุ..." onclick="event.stopPropagation()"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M5 20V10l7-7 7 7v10"/></svg>
+        งานที่กำลังดำเนินการ
+      </div>
+      <div class="card-body">
+        <div class="choices" id="wtype-grp">
+          <label class="ci" onclick="togCB(this)"><input type="checkbox" name="wtype" value="อาคารที่พักอาศัย"><span>อาคารที่พักอาศัย</span></label>
+          <label class="ci" onclick="togCB(this)"><input type="checkbox" name="wtype" value="วัด"><span>วัด</span></label>
+          <label class="ci" onclick="togCB(this)"><input type="checkbox" name="wtype" value="อาคารราชการ"><span>อาคารราชการ</span></label>
+          <label class="ci" onclick="togCB(this)"><input type="checkbox" name="wtype" value="ถนน"><span>ถนน</span></label>
+          <label class="ci" onclick="togCB(this)"><input type="checkbox" name="wtype" value="ซื้อไปขายต่อ(ร้านค้า)"><span>ซื้อไปขายต่อ (ร้านค้า)</span></label>
+          <label class="ci" onclick="togCB(this);togSub('sub-wtype',this)"><input type="checkbox" name="wtype" value="อื่นๆ"><span>อื่นๆ ระบุ<input class="sub-inp" id="sub-wtype" type="text" placeholder="ระบุ..." onclick="event.stopPropagation()"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        โอกาสการขาย
+      </div>
+      <div class="card-body">
+        <div class="choices" id="opp-grp">
+          <label class="ci" onclick="pickR(this,'opp');showAmt(false)"><input type="radio" name="opp" value="1"><span><span class="ci-num">1</span>ยังไม่ใช้ของช่วงนี้ — อัปเดตกันอีกที</span></label>
+          <label class="ci" onclick="pickR(this,'opp');showAmt(false)"><input type="radio" name="opp" value="2"><span><span class="ci-num">2</span>สนใจ — ระหว่างสรุปรายการเพื่อเสนอราคา</span></label>
+          <label class="ci" onclick="pickR(this,'opp');showAmt(false)"><input type="radio" name="opp" value="3"><span><span class="ci-num">3</span>กำลังเสนอราคา — รอลูกค้ายืนยัน</span></label>
+          <label class="ci" onclick="pickR(this,'opp');showAmt(true)"><input type="radio" name="opp" value="4"><span><span class="ci-num" style="background:#388600">4</span>ได้ขายบิลแรกแล้ว<div class="amt-row"><input type="text" id="f-amount" placeholder="0" inputmode="numeric" onclick="event.stopPropagation()"><span id="baht-lbl">บาท</span></div></span></label>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary" id="submitBtn">
+      <span id="btn-txt">บันทึกข้อมูล</span>
+    </button>
+  </form>
+
+  <div class="success-box" id="successBox">
+    <div style="font-size:42px">✅</div>
+    <h3>บันทึกเรียบร้อยแล้ว!</h3>
+    <p>ข้อมูลถูกส่งไปยังฐานข้อมูลกลางแล้ว</p>
+    <button class="add-more" onclick="resetForm()">+ บันทึกลูกค้าใหม่อีกราย</button>
+    <button class="add-more" style="background:#2E75B6;margin-left:8px" onclick="showPage('dash')">ดูรายชื่อทั้งหมด</button>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE 2 — DASHBOARD ════════════════════ -->
+<div class="page" id="page-dash">
+
+  <!-- STATS -->
+  <div class="dash-top">
+    <div class="stat-card s1"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">ทั้งหมด</div></div>
+    <div class="stat-card s2"><div class="stat-num" id="st-opp4">0</div><div class="stat-lbl">ขายได้แล้ว</div></div>
+    <div class="stat-card s3"><div class="stat-num" id="st-opp3">0</div><div class="stat-lbl">รอยืนยัน</div></div>
+    <div class="stat-card s4"><div class="stat-num" id="st-opp1">0</div><div class="stat-lbl">ยังไม่พร้อม</div></div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-row">
+    <input type="text" id="search" placeholder="ค้นหาชื่อลูกค้า / พื้นที่..." oninput="renderTable()">
+    <select id="fil-opp" onchange="renderTable()">
+      <option value="">โอกาสทั้งหมด</option>
+      <option value="1">1 — ยังไม่พร้อม</option>
+      <option value="2">2 — สรุปรายการ</option>
+      <option value="3">3 — รอยืนยัน</option>
+      <option value="4">4 — ขายได้แล้ว</option>
+    </select>
+    <button class="btn-sm btn-edit" onclick="loadData()" style="flex:none;white-space:nowrap">↻ รีเฟรช</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tbl-wrap">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>วันที่</th>
+          <th>ชื่อลูกค้า</th>
+          <th>พื้นที่</th>
+          <th>โอกาส</th>
+          <th>ดำเนินการ</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body">
+        <tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h14a2 2 0 002-2v0a2 2 0 00-2-2h-4M9 17V9m0 8l3-3m0 0l3 3m-3-3V3"/></svg><p>กำลังโหลดข้อมูล...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="tbl-count" style="font-size:12px;color:#888;text-align:right;margin-top:6px"></div>
+</div>
+
+<!-- ════════════════════ MODAL — DETAIL / EDIT ════════════════════ -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">รายละเอียดลูกค้า</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwN5RATdbjks0qb8x4OjTpnS1LuBc0ku2Z3YUonpYyLeXtVu_QjuBl53aiw762jt36PKQ/exec";
+
+// ── DATA STORE ───────────────────────────────────────────────
+let allData = [];   // [{row, date, name, contact, area, ctype, wtype, opp, amount, sales, saved}]
+let currentRow = null;
+
+// ── OPP LABELS ───────────────────────────────────────────────
+const OPP_MAP = {
+  "1":"1 — ยังไม่ใช้ของช่วงนี้","2":"2 — สนใจ / สรุปรายการ",
+  "3":"3 — รอลูกค้ายืนยัน","4":"4 — ขายได้แล้ว"
+};
+const OPP_CLASS = {"1":"opp1","2":"opp2","3":"opp3","4":"opp4"};
+
+// ── PAGE NAVIGATION ──────────────────────────────────────────
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('tab-'+p).classList.add('active');
+  if(p==='dash') loadData();
+}
+
+// ── SET DEFAULT DATE ─────────────────────────────────────────
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+// ── FORM CHOICE HELPERS ──────────────────────────────────────
+function pickR(el,name){
+  if(event.target.tagName==='INPUT'&&event.target.type==='text') return;
+  document.querySelectorAll(`[name="${name}"]`).forEach(r=>r.closest('.ci').classList.remove('sel'));
+  el.classList.add('sel');
+  el.querySelector('input[type=radio]').checked=true;
+  el.closest('.choices').querySelectorAll('.sub-inp').forEach(s=>{if(!el.contains(s))s.classList.remove('show')});
+}
+function togCB(el){
+  if(event.target.tagName==='INPUT'&&event.target.type==='text') return;
+  const cb=el.querySelector('input[type=checkbox]');
+  cb.checked=!cb.checked;
+  el.classList.toggle('sel',cb.checked);
+}
+function togSub(id,el){
+  const inp=document.getElementById(id);
+  const ctrl=el.querySelector('input');
+  const on=ctrl.type==='radio'?true:ctrl.checked;
+  inp.classList.toggle('show',on);
+  if(on) setTimeout(()=>inp.focus(),50);
+}
+function showAmt(on){
+  document.getElementById('f-amount').classList.toggle('show',on);
+  document.getElementById('baht-lbl').classList.toggle('show',on);
+  if(on) setTimeout(()=>document.getElementById('f-amount').focus(),50);
+}
+
+// ── COLLECT FORM DATA ────────────────────────────────────────
+function collectForm(){
+  let ctype=(document.querySelector('[name=ctype]:checked')||{}).value||'';
+  if(ctype==='อื่นๆ'){const t=document.getElementById('sub-ctype').value.trim();ctype='อื่นๆ: '+(t||'-');}
+  const wtypes=[...document.querySelectorAll('[name=wtype]:checked')].map(c=>{
+    if(c.value==='อื่นๆ'){const t=document.getElementById('sub-wtype').value.trim();return'อื่นๆ: '+(t||'-');}return c.value;
+  });
+  const opp=(document.querySelector('[name=opp]:checked')||{}).value||'';
+  return{
+    date:document.getElementById('f-date').value,
+    name:document.getElementById('f-name').value.trim(),
+    contact:document.getElementById('f-contact').value.trim(),
+    area:document.getElementById('f-area').value.trim(),
+    ctype,wtype:wtypes.join(', '),opp,
+    amount:opp==='4'?(document.getElementById('f-amount').value||''):'',
+    sales:document.getElementById('f-sales').value.trim()
+  };
+}
+
+// ── VALIDATE ────────────────────────────────────────────────
+function validate(){
+  let ok=true;
+  const date=document.getElementById('f-date').value;
+  const name=document.getElementById('f-name').value.trim();
+  document.getElementById('fw-date').classList.toggle('field-err',!date);
+  document.getElementById('e-date').classList.toggle('show',!date);
+  document.getElementById('fw-name').classList.toggle('field-err',!name);
+  document.getElementById('e-name').classList.toggle('show',!name);
+  if(!date||!name) ok=false;
+  return ok;
+}
+
+// ── SUBMIT FORM ──────────────────────────────────────────────
+document.getElementById('mainForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  if(!validate()) return;
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;document.getElementById('btn-txt').textContent='กำลังบันทึก...';
+  const data=collectForm();
+  try{
+    if(SCRIPT_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
+      await new Promise(r=>setTimeout(r,900));
+      // Demo: push to local store
+      data.row=allData.length+2;
+      data.saved=new Date().toLocaleString('th-TH');
+      allData.push({...data});
+    } else {
+      const p=new URLSearchParams({...data,mode:'add'});
+      await fetch(SCRIPT_URL,{method:'POST',body:p});
+    }
+    document.getElementById('mainForm').style.display='none';
+    document.getElementById('successBox').classList.add('show');
+  }catch(err){showToast('เกิดข้อผิดพลาด กรุณาลองใหม่');}
+  finally{btn.disabled=false;document.getElementById('btn-txt').textContent='บันทึกข้อมูล';}
+});
+
+function resetForm(){
+  document.getElementById('mainForm').reset();
+  document.getElementById('mainForm').style.display='block';
+  document.getElementById('successBox').classList.remove('show');
+  document.querySelectorAll('.ci').forEach(i=>i.classList.remove('sel'));
+  document.querySelectorAll('.sub-inp').forEach(i=>i.classList.remove('show'));
+  document.getElementById('f-amount').classList.remove('show');
+  document.getElementById('baht-lbl').classList.remove('show');
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  window.scrollTo(0,0);
+}
+
+// ── LOAD DATA FROM SHEETS ────────────────────────────────────
+async function loadData(){
+  document.getElementById('tbl-body').innerHTML=`<tr><td colspan="6"><div class="empty-state"><p>กำลังโหลด...</p></div></td></tr>`;
+  try{
+    if(SCRIPT_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
+      // demo data
+      if(allData.length===0){
+        allData=[
+          {row:2,date:'2026-06-20',name:'หจก.ตั้งตรงเจริญ',contact:'089-111-2222',area:'ต.โพนเขวา อ.เมือง จ.ศรีสะเกษ',ctype:'1.ผู้รับเหมา',wtype:'อาคารที่พักอาศัย',opp:'3',amount:'',sales:'น้องฟิล์ม',saved:'20/6/2569'},
+          {row:3,date:'2026-06-21',name:'ร้านสุวรรณวัสดุ',contact:'083-222-3333',area:'ต.บึงบูรพ์ อ.บึงบูรพ์ จ.ศรีสะเกษ',ctype:'3.ร้านค้าวัสดุ',wtype:'ซื้อไปขายต่อ(ร้านค้า)',opp:'2',amount:'',sales:'แอดมิน',saved:'21/6/2569'},
+          {row:4,date:'2026-06-22',name:'นายสมชาย ใจดี',contact:'091-333-4444',area:'ต.ดอนเขวา อ.เมือง จ.ศรีสะเกษ',ctype:'1.ผู้รับเหมา',wtype:'ถนน',opp:'4',amount:'45000',sales:'น้องฟิล์ม',saved:'22/6/2569'},
+          {row:5,date:'2026-06-23',name:'วัดบ้านขาม',contact:'',area:'ต.บัวน้อย อ.กันทรารมย์ จ.ศรีสะเกษ',ctype:'2.หน่วยงานราชการ',wtype:'วัด',opp:'1',amount:'',sales:'แอดมิน',saved:'23/6/2569'},
+          {row:6,date:'2026-06-24',name:'บริษัทก่อสร้างรุ่งเรือง จำกัด',contact:'044-555-6789',area:'ต.หนองไผ่ อ.เมือง จ.บุรีรัมย์',ctype:'1.ผู้รับเหมา',wtype:'อาคารราชการ, ถนน',opp:'4',amount:'280000',sales:'น้องฟิล์ม',saved:'24/6/2569'},
+        ];
+      }
+      renderTable();updateStats();
+    } else {
+      const res=await fetch(SCRIPT_URL+'?mode=list');
+      const json=await res.json();
+      allData=json.data||[];
+      renderTable();updateStats();
+    }
+  }catch(err){document.getElementById('tbl-body').innerHTML=`<tr><td colspan="6"><div class="empty-state"><p>โหลดข้อมูลไม่สำเร็จ</p></div></td></tr>`;}
+}
+
+// ── RENDER TABLE ─────────────────────────────────────────────
+function renderTable(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const fo=document.getElementById('fil-opp').value;
+  const filtered=allData.filter(d=>{
+    const matchQ=!q||(d.name||'').toLowerCase().includes(q)||(d.area||'').toLowerCase().includes(q)||(d.contact||'').toLowerCase().includes(q);
+    const matchO=!fo||d.opp===fo;
+    return matchQ&&matchO;
+  });
+  const tbody=document.getElementById('tbl-body');
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบข้อมูล</p></div></td></tr>`;
+    document.getElementById('tbl-count').textContent='';return;
+  }
+  tbody.innerHTML=filtered.map((d,i)=>`
+    <tr onclick="openDetail(${allData.indexOf(d)})">
+      <td style="color:#888;font-size:12px">${i+1}</td>
+      <td style="white-space:nowrap;font-size:12px">${fmtDate(d.date)}</td>
+      <td style="font-weight:600;color:#1F4E79">${esc(d.name)}</td>
+      <td style="font-size:12px;color:#555">${esc(d.area||'-')}</td>
+      <td><span class="opp-badge ${OPP_CLASS[d.opp]||''}">${d.opp||'-'}</span></td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="btn-sm btn-edit" onclick="openEdit(${allData.indexOf(d)})">แก้ไข</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('tbl-count').textContent=`แสดง ${filtered.length} จาก ${allData.length} รายการ`;
+}
+
+function updateStats(){
+  document.getElementById('st-total').textContent=allData.length;
+  document.getElementById('st-opp4').textContent=allData.filter(d=>d.opp==='4').length;
+  document.getElementById('st-opp3').textContent=allData.filter(d=>d.opp==='3').length;
+  document.getElementById('st-opp1').textContent=allData.filter(d=>d.opp==='1').length;
+}
+
+// ── FORMAT HELPERS ────────────────────────────────────────────
+function fmtDate(d){if(!d)return'-';try{const p=new Date(d);return p.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});}catch{return d;}}
+function fmtAmt(a){if(!a||a==='')return'-';const n=parseFloat(a);return isNaN(n)?a:n.toLocaleString('th-TH')+'  บาท';}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+// ── MODAL — DETAIL VIEW ───────────────────────────────────────
+function openDetail(idx){
+  const d=allData[idx];currentRow=idx;
+  const oppLabel=OPP_MAP[d.opp]||d.opp||'-';
+  document.getElementById('modal-title').textContent='รายละเอียดลูกค้า';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="detail-row"><div class="detail-key">ชื่อลูกค้า</div><div class="detail-val" style="font-weight:700;font-size:15px;color:#1F4E79">${esc(d.name)}</div></div>
+    <div class="detail-row"><div class="detail-key">วันที่บันทึก</div><div class="detail-val">${fmtDate(d.date)}</div></div>
+    <div class="detail-row"><div class="detail-key">เซลล์ผู้บันทึก</div><div class="detail-val">${esc(d.sales||'-')}</div></div>
+    <div class="detail-row"><div class="detail-key">เบอร์ / ID Line</div><div class="detail-val">${esc(d.contact||'-')}</div></div>
+    <div class="detail-row"><div class="detail-key">พื้นที่</div><div class="detail-val">${esc(d.area||'-')}</div></div>
+    <div class="detail-row"><div class="detail-key">ประเภทลูกค้า</div><div class="detail-val">${esc(d.ctype||'-')}</div></div>
+    <div class="detail-row"><div class="detail-key">งานที่ดำเนินการ</div><div class="detail-val">${esc(d.wtype||'-')}</div></div>
+    <div class="detail-row"><div class="detail-key">โอกาสการขาย</div><div class="detail-val"><span class="opp-badge ${OPP_CLASS[d.opp]||''}">${oppLabel}</span></div></div>
+    ${d.opp==='4'?`<div class="detail-row"><div class="detail-key">ยอดบิลแรก</div><div class="detail-val" style="font-weight:700;color:#388600">${fmtAmt(d.amount)}</div></div>`:''}
+    <div class="detail-row"><div class="detail-key">บันทึกเมื่อ</div><div class="detail-val" style="color:#888;font-size:12px">${esc(d.saved||'-')}</div></div>`;
+  document.getElementById('modal-footer').innerHTML=`
+    <button class="btn-sm btn-cancel" onclick="closeModal()">ปิด</button>
+    <button class="btn-sm btn-edit" onclick="openEdit(${idx})">แก้ไขข้อมูล</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+// ── MODAL — EDIT FORM ─────────────────────────────────────────
+function openEdit(idx){
+  const d=allData[idx];currentRow=idx;
+  document.getElementById('modal-title').textContent='แก้ไขข้อมูลลูกค้า';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-field"><label>วันที่</label><input type="date" id="e-date2" value="${d.date||''}"></div>
+    <div class="modal-field"><label>ชื่อเซลล์ผู้บันทึก</label><input type="text" id="e-sales" value="${esc(d.sales||'')}"></div>
+    <div class="modal-field"><label>ชื่อลูกค้า</label><input type="text" id="e-name" value="${esc(d.name||'')}"></div>
+    <div class="modal-field"><label>เบอร์ / ID Line</label><input type="tel" id="e-contact" value="${esc(d.contact||'')}"></div>
+    <div class="modal-field"><label>พื้นที่</label><input type="text" id="e-area" value="${esc(d.area||'')}"></div>
+    <div class="modal-field"><label>ประเภทลูกค้า</label>
+      <select id="e-ctype">
+        <option value="">-- เลือก --</option>
+        ${['1.ผู้รับเหมา','2.หน่วยงานราชการ','3.ร้านค้าวัสดุ','อื่นๆ'].map(v=>`<option ${d.ctype===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-field"><label>งานที่ดำเนินการ</label><input type="text" id="e-wtype" value="${esc(d.wtype||'')}"></div>
+    <div class="modal-field"><label>โอกาสการขาย</label>
+      <select id="e-opp" onchange="togEditAmt()">
+        <option value="">-- เลือก --</option>
+        ${['1','2','3','4'].map(v=>`<option value="${v}" ${d.opp===v?'selected':''}>${OPP_MAP[v]}</option>`).join('')}
+      </select>
+    </div>
+    <div class="modal-field" id="e-amt-wrap" style="${d.opp==='4'?'':'display:none'}">
+      <label>ยอดบิลแรก (บาท)</label>
+      <input type="text" id="e-amount" inputmode="numeric" value="${esc(d.amount||'')}">
+    </div>`;
+  document.getElementById('modal-footer').innerHTML=`
+    <button class="btn-sm btn-cancel" onclick="openDetail(${idx})">ยกเลิก</button>
+    <button class="btn-sm btn-save" onclick="saveEdit(${idx})">บันทึกการแก้ไข</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function togEditAmt(){
+  const v=document.getElementById('e-opp').value;
+  document.getElementById('e-amt-wrap').style.display=v==='4'?'block':'none';
+}
+
+async function saveEdit(idx){
+  const d=allData[idx];
+  const updated={
+    row:d.row,
+    date:document.getElementById('e-date2').value,
+    sales:document.getElementById('e-sales').value.trim(),
+    name:document.getElementById('e-name').value.trim(),
+    contact:document.getElementById('e-contact').value.trim(),
+    area:document.getElementById('e-area').value.trim(),
+    ctype:document.getElementById('e-ctype').value,
+    wtype:document.getElementById('e-wtype').value.trim(),
+    opp:document.getElementById('e-opp').value,
+    amount:document.getElementById('e-opp').value==='4'?(document.getElementById('e-amount').value||''):'',
+    saved:d.saved
+  };
+  if(!updated.name){showToast('กรุณากรอกชื่อลูกค้า');return;}
+  try{
+    if(SCRIPT_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+      const p=new URLSearchParams({...updated,mode:'update'});
+      await fetch(SCRIPT_URL,{method:'POST',body:p});
+    }
+    allData[idx]={...updated};
+    renderTable();updateStats();
+    showToast('บันทึกการแก้ไขเรียบร้อยแล้ว ✓');
+    openDetail(idx);
+  }catch(err){showToast('เกิดข้อผิดพลาด กรุณาลองใหม่');}
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
